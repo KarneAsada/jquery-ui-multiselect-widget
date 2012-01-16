@@ -38,6 +38,7 @@ $.widget("ech.multiselect", {
 		show: '',
 		hide: '',
 		autoOpen: false,
+		alwaysOpen: false,
 		multiple: true,
 		position: {}
 	},
@@ -659,6 +660,11 @@ $.widget("ech.multiselect", {
 		}
 
 		var o = this.options, effect = o.hide, speed = this.speed;
+
+    // Cancel close if set to always open
+    if( o.alwaysOpen ) {
+      return;
+    }
 
 		// figure out opening effects/speeds
 		if( $.isArray(o.hide) ){
