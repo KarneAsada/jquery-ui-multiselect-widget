@@ -88,6 +88,11 @@
 							_self._toggleState('selected', flag).call( this );
 						}
 					});
+
+      		// trigger the change event on the select
+      		if( $inputs.length ) {
+      			this.element.trigger("change");
+      		}
 			};
 			
 			// rebuild cache when multiselect is updated
