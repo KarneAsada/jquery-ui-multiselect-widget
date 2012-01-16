@@ -50,6 +50,8 @@ $.widget("ech.multiselect", {
 		this._isOpen = false; // assume no
 	
 		var 
+		this.shiftSelection = []; // indexes of items in the shift selection
+
 			button = (this.button = $('<button type="button"><span class="ui-icon ui-icon-triangle-2-n-s"></span></button>'))
 				.addClass('ui-multiselect ui-widget ui-state-default ui-corner-all')
 				.addClass( o.classes )
@@ -335,6 +337,19 @@ $.widget("ech.multiselect", {
 					case 13: // enter
 						$(this).find('input')[0].click();
 						break;
+					case 65: // a
+						if (e.ctrlKey || e.metaKey) {
+							self.checkAll();
+						}
+						break;
+				}
+			})
+			.delegate('label', 'keyup.multiselect', function( e ){
+				e.preventDefault();
+
+				// Clear shift selection
+				if( ! e.shiftKey ){
+					self._clearShiftSelection();
 				}
 			})
 			.delegate('input[type="checkbox"], input[type="radio"]', 'click.multiselect', function( e ){
@@ -365,6 +380,16 @@ $.widget("ech.multiselect", {
 					}
 				});
 				
+				// if shift key is held down, shift-select
+				if( e.shiftKey ) {
+					var currIdx = $this.closest("ul").children("li").index( $this.closest("li") );
+					self._checkShiftSelection(currIdx);
+
+				// Otherwise, remove all shift selections
+				} else {
+					self._clearShiftSelection();
+				}
+
 				// some additional single select-specific logic
 				if( !self.options.multiple ){
 					self.labels.removeClass('ui-state-active');
@@ -513,6 +538,68 @@ $.widget("ech.multiselect", {
 			.attr({ 'disabled':flag, 'aria-disabled':flag });
 	},
 	
+
+	_checkShiftSelection: function(currIdx){
+		self = this;
+
+		// if shift bound(s) are set, modify selection bounds
+		if( self.shiftSelection.length ) {
+
+			// If there is just one bounds, add the new one
+			if( self.shiftSelection.length == 1 ){
+				if( self.shiftSelection[0] > currIdx ){
+					self.shiftSelection.unshift( currIdx );
+				} else if( self.shiftSelection[0] < currIdx ) {
+					self.shiftSelection.push( currIdx );
+				}
+
+			// If there are more than 1 bounds (ie 2) remove one
+			} else {
+
+				// Unselect lower
+				if( currIdx == self.shiftSelection[0] ){
+					if( self.shiftSelection[0] == self.shiftSelection[1]-1 ){
+						self.shiftSelection.unshift();
+					} else {
+						self.shiftSelection[0]++;
+					}
+
+				// Unselect lower
+				} else if( currIdx == self.shiftSelection[1] ){
+					if( self.shiftSelection[0] == self.shiftSelection[1]-1 ){
+						self.shiftSelection.pop();
+					} else {
+						self.shiftSelection[1]--;
+					}
+
+				// Replace lower
+				} else if( currIdx < self.shiftSelection[0] ) {
+					self.shiftSelection[0] = currIdx;
+
+				// Replace upper
+				} else if( currIdx > self.shiftSelection[1] ) {
+					self.shiftSelection[1] = currIdx;
+				}
+			}
+		} else {
+			self.shiftSelection.push(currIdx);
+		}
+
+		// Check inputs in shift selection
+		if (self.shiftSelection.length == 2) {
+			for( var i=self.shiftSelection[0]; i<=self.shiftSelection[1]; i++){
+				if (self.checkboxContainer.find("input").eq(i).is(":visible")) {
+					self.checkboxContainer.find("input").eq(i).attr("checked", true);
+				}
+			}
+		}
+
+	},
+
+	_clearShiftSelection: function(){
+		self.shiftSelection = [];
+	},
+
 	// open the menu
 	open: function( e ){
 		var self = this,
